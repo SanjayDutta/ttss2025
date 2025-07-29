@@ -1,0 +1,8 @@
+# Keyword Consolidator Project Dependencies
+# This file tracks all Python packages required for the keyword consolidation project
+
+# Text processing and NLP packages
+sentence-transformers>=2.2.0
+
+# Note: json and os are built-in Python modules, no installation needed
+# Note: keyword_mapper is a local module in this project 
