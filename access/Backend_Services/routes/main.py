@@ -137,111 +137,35 @@ def fetch_articles_keywords():
             # Close MongoDB connection
             client.close()
             
-            # Send requests to OpenAI API for bias analysis
-            openai_api_key = "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"
-            headers = {
-                "Authorization": f"Bearer {openai_api_key}",
-                "Content-Type": "application/json"
-            }
-            
             #convert all keywords into a string
             keywords_string = ", ".join(keywords)
 
-            # Send request for Guardian content
+            # Send request for Guardian content for LLM Analysis to Llama3.2
             if guardian_content:
                 guardian_content_limited =""
                 #collect first 20 content from guardian_articles
                 for guardian_article in guardian_articles:
                     guardian_content_limited += "\n\n Article " +":\n" + guardian_article.get("title") + "\n"
-                
-                # Limit Guardian content to first 15000 words
-                #guardian_words = guardian_content.split()
-                #guardian_content_limited = ' '.join(guardian_words[:10000])
-                
-                with open("guardian_content_limited.txt", "w") as f:
-                    f.write(guardian_content_limited)
-
-                guardian_content_analysis = ""
-                guardian_payload = {
-                    "model": "gpt-3.5-turbo",
-                    "messages": [
-                        {
-                            "role": "assistant",
-                            "content": "You are a helpful assistant with expertise in understanding political landscape. The user will provide you multiple articles.Tell me, what the general view is based on the articles, the sentiment behind the all news article, as well as the general bias associated with it -like left/leanleft/neutral/lean right/right and give one sentence reasoning behind it.\n\nKeywords: " + keywords_string +"\n"
-                        },
-                        {
-                            "role": "user",
-                            "content": guardian_content_limited
-                        }
-                    ]
-                }
-
-                
-                   
-                '''llama_response =""
+                llama_response =""
                 response = requests.post(
                     "http://localhost:11434/api/generate",
                     json={"model": "llama3.2:3b", "prompt": "You are a helpful assistant with expertise in understanding political landscape. The user will provide you multiple articles.Tell me, what the general view is based on the articles, the sentiment behind the all news article, as well as the general bias associated with it -like left/leanleft/neutral/lean right/right and give one sentence reasoning behind it.Also word limit is 150. Also use <b></b> to put worlds which are usually between ****\n\nKeywords: " + keywords_string +"\n"+guardian_content_limited, "stream": False}
                 )
                 llama_response = response.json()['response']
-                with open("llama_analysis.txt", "w") as f:
-                    f.write(llama_response)'''
-
-
-                try:
-                    guardian_response = requests.post(
-                        "https://api.openai.com/v1/chat/completions",
-                        headers=headers,
-                        json=guardian_payload
-                    )
-                    guardian_analysis = guardian_response.json()
-                    print("Guardian OpenAI Analysis:", guardian_analysis)
-                except Exception as e:
-                    print(f"Error calling OpenAI API for Guardian: {e}")
-                    guardian_analysis = None
                 
-                
-            
-            # Send request for Breitbart content
+            # Send request for Breitbart content for LLM Analysis to Llama3.2
             if breitbart_content:
                 # Limit Breitbart content to first 15000 words
                 breitbart_words = breitbart_content.split()
                 breitbart_content_limited = ' '.join(breitbart_words[:10000])
-                
-                breitbart_payload = {
-                    "model": "gpt-3.5-turbo",
-                    "messages": [
-                        {
-                            "role": "assistant",
-                            "content": "You are a helpful assistant with expertise in understanding political landscape. The user will provide you multiple articles.Tell me, what the general view is based on the articles, the sentiment behind the all news article, as well as the general bias associated with it -like left/leanleft/neutral/lean right/right and give one sentence reasoning behind it.\n\nKeywords: " + keywords_string +"\n"
-                        },
-                        {
-                            "role": "user",
-                            "content": breitbart_content_limited
-                        }
-                    ]
-                }
-
-                '''breitbart_llama_response =""
+                breitbart_llama_response =""
                 response = requests.post(
                     "http://localhost:11434/api/generate",
                     json={"model": "llama3.2:3b", "prompt": "You are a helpful assistant with expertise in understanding political landscape. The user will provide you multiple articles.Tell me, what the general view is based on the articles, the sentiment behind the all news article, as well as the general bias associated with it -like left/leanleft/neutral/lean right/right and give one sentence reasoning behind it.Also word limit is 150. Also use <b></b> to put worlds which are usually between ****\n\nKeywords: " + keywords_string +"\n"+breitbart_content_limited, "stream": False}
                 )
                 breitbart_llama_response = response.json()['response']
-                with open("llama_analysis.txt", "w") as f:
-                    f.write(llama_response)'''
                 
-                try:
-                    breitbart_response = requests.post(
-                        "https://api.openai.com/v1/chat/completions",
-                        headers=headers,
-                        json=breitbart_payload
-                    )
-                    breitbart_analysis = breitbart_response.json()
-                    print("Breitbart OpenAI Analysis:", breitbart_analysis)
-                except Exception as e:
-                    print(f"Error calling OpenAI API for Breitbart: {e}")
-                    breitbart_analysis = None
+               
 
         
         
@@ -258,17 +182,31 @@ def fetch_articles_keywords():
             ET.SubElement(metadata, "total_articles_found").text = str(len(articles))
             ET.SubElement(metadata, "keywords_string").text = keywords_string
             
-            # Add Guardian analysis if available
+            '''# Add Guardian analysis if available
             if 'guardian_analysis' in locals() and guardian_analysis and 'choices' in guardian_analysis and len(guardian_analysis['choices']) > 0:
                 guardian_content_analysis = guardian_analysis['choices'][0]['message']['content']
-                #ET.SubElement(metadata, "guardian_analysis").text = llama_response
-                ET.SubElement(metadata, "guardian_analysis").text = guardian_content_analysis
+                #convert llama response to string
+                ET.SubElement(metadata, "guardian_analysis").text = llama_response
+                #ET.SubElement(metadata, "guardian_analysis").text = guardian_content_analysis
             
             # Add Breitbart analysis if available
             if 'breitbart_analysis' in locals() and breitbart_analysis and 'choices' in breitbart_analysis and len(breitbart_analysis['choices']) > 0:
                 breitbart_content = breitbart_analysis['choices'][0]['message']['content']
-                ET.SubElement(metadata, "breitbart_analysis").text = breitbart_content 
-                #ET.SubElement(metadata, "breitbart_analysis").text = breitbart_llama_response
+                #ET.SubElement(metadata, "breitbart_analysis").text = breitbart_content 
+                ET.SubElement(metadata, "breitbart_analysis").text = breitbart_llama_response'''
+
+            if llama_response:
+                ET.SubElement(metadata, "guardian_analysis").text = llama_response
+                
+            # Add Breitbart analysis if available
+            if breitbart_llama_response:
+                ET.SubElement(metadata, "breitbart_analysis").text = breitbart_llama_response
+
+
+
+
+
+
             # Add articles
             articles_element = ET.SubElement(root, "articles")
             
